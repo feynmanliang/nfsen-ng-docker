@@ -1,16 +1,19 @@
-FROM php:7.4-apache
+FROM php:8.1-apache
 
 MAINTAINER Konrad Roziewski <kroziewski@gmail.com>
 
 WORKDIR /var/www/html
-RUN DEBIAN_FRONTEND=noninteractive apt update && apt install -y pkg-config nfdump rrdtool librrd-dev git
+RUN DEBIAN_FRONTEND=noninteractive apt update && apt install -y pkg-config nfdump rrdtool librrd-dev git wget
 RUN a2enmod rewrite deflate headers expires
 RUN pecl install rrd
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 RUN echo "extension=rrd.so" >> /usr/local/etc/php/conf.d/rrd.ini
 RUN sed -e '/<Directory \/var\/www\/>/,/<\/Directory>/s/AllowOverride None/AllowOverride All/' -i /etc/apache2/apache2.conf
 
-RUN git clone https://github.com/mbolli/nfsen-ng.git .
+RUN git clone --depth 1 --branch v0.3.1 https://github.com/mbolli/nfsen-ng.git .
+RUN wget https://raw.githubusercontent.com/composer/getcomposer.org/76a7060ccb93902cd7576b67264ad91c8a2700e2/web/installer -O - -q | php -- --quiet
+RUN php composer.phar install --no-dev
+
 COPY settings.php backend/settings/settings.tmpl
 COPY entrypoint.sh /tmp/
 

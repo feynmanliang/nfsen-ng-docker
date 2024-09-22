@@ -5,17 +5,40 @@ services:
   nfsen:
     build: nfsen-ng
     ports:
-    - 81:80
+    - 8080:80
     volumes:
-    - ./profiles-data:/var/nfdump/profiles-data
-    - ./sources.conf:/tmp/sources.conf:ro
+    - ./profiles-data:/var/nfdump/profiles-data:z
+    - ./sources.conf:/tmp/sources.conf:ro,z
     restart: unless-stopped
     
   nfdump:
     build: nfdump
     ports:
-    - 9000-9099:9000-9099/udp
+      - 9995:9995/udp
     volumes:
-    - ./profiles-data:/data
-    - ./sources.conf:/tmp/sources.conf:ro
+    - ./profiles-data:/data:z
+    - ./sources.conf:/tmp/sources.conf:ro,z
     restart: unless-stopped
+
+  ntopng:
+    container_name: ntopng
+    restart: unless-stopped
+    image: ntop/ntopng:stable
+    privileged: true
+    environment:
+      NTOP_CONFIG: -i zmq://netflow2ng:5556 --local-networks="192.168.1.0/24" --community
+    # volumes:
+    #   - ./etc_ntopng:/etc/ntopng:z
+    ports:
+        - 3000:3000/tcp
+
+  netflow2ng:
+      container_name: netflow2ng
+      restart: unless-stopped
+      image: synfinatic/netflow2ng:v0.0.3
+      entrypoint: /netflow2ng -a 0.0.0.0:9995 --log-level=debug
+      ports:
+          - 5556:5556/tcp
+          - 8081:8080/tcp
+          - 2055:2055/udp
+          - 9996:9995/udp
