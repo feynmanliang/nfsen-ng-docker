@@ -27,8 +27,8 @@ services:
     privileged: true
     environment:
       NTOP_CONFIG: -i zmq://netflow2ng:5556 --local-networks="192.168.1.0/24" --community
-    # volumes:
-    #   - ./etc_ntopng:/etc/ntopng:z
+    volumes:
+      - ./ntopng_data:/var/lib/ntopng:z
     ports:
         - 3000:3000/tcp
 
